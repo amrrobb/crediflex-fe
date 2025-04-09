@@ -5,7 +5,6 @@ import {
 	ArrowRight,
 	BarChart3,
 	ChevronRight,
-	CreditCard,
 	Lock,
 	Shield,
 } from "lucide-react";
@@ -446,14 +445,14 @@ export default function Home() {
 							<div className="py-6">
 								<details className="group">
 									<summary className="flex cursor-pointer items-center justify-between text-lg font-medium text-white">
-										<span>What happens if I can't repay my loan?</span>
+										<span>What happens if I can&apos;t repay my loan?</span>
 										<ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" />
 									</summary>
 									<p className="mt-4 text-zinc-400">
-										If you're unable to repay your loan by the due date, your
-										collateral will be liquidated. Additionally, your credit
-										score will be negatively affected, reducing your borrowing
-										capacity for future loans.
+										If you&apos;re unable to repay your loan by the due date,
+										your collateral will be liquidated. Additionally, your
+										credit score will be negatively affected, reducing your
+										borrowing capacity for future loans.
 									</p>
 								</details>
 							</div>
@@ -466,8 +465,8 @@ export default function Home() {
 									<p className="mt-4 text-zinc-400">
 										Crediflex currently supports major cryptocurrencies
 										including ETH, WBTC, and several stablecoins as collateral.
-										We're continuously expanding our supported assets based on
-										community demand and risk assessment.
+										We&apos;re continuously expanding our supported assets based
+										on community demand and risk assessment.
 									</p>
 								</details>
 							</div>
@@ -489,152 +488,6 @@ export default function Home() {
 					</div>
 				</motion.section>
 			</main>
-
-			{/* Footer */}
-			{/* <motion.footer
-				className="border-t border-zinc-800 bg-black py-12"
-				initial={{ opacity: 0, y: 50 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5, delay: 2.0 }}
-			>
-				<div className="container mx-auto px-4">
-					<div className="grid gap-8 md:grid-cols-4">
-						<div>
-							<div className="flex items-center gap-2">
-								<CreditCard className="h-6 w-6 text-zinc-100" />
-								<span className="text-lg font-bold text-white">Crediflex</span>
-							</div>
-							<p className="mt-4 text-sm text-zinc-400">
-								Undercollateralized Lending Protocol leveraging on-chain
-								activity-based credit scoring.
-							</p>
-						</div>
-						<div>
-							<h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
-								Protocol
-							</h3>
-							<ul className="space-y-2 text-sm">
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										How It Works
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Documentation
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Security
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Governance
-									</Link>
-								</li>
-							</ul>
-						</div>
-						<div>
-							<h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
-								Resources
-							</h3>
-							<ul className="space-y-2 text-sm">
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Blog
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										FAQ
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Community
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Developers
-									</Link>
-								</li>
-							</ul>
-						</div>
-						<div>
-							<h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
-								Connect
-							</h3>
-							<ul className="space-y-2 text-sm">
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Twitter
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Discord
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										GitHub
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="#"
-										className="text-zinc-400 transition-colors hover:text-white"
-									>
-										Telegram
-									</Link>
-								</li>
-							</ul>
-						</div>
-					</div>
-					<div className="mt-12 border-t border-zinc-800 pt-8 text-center">
-						<p className="text-sm text-zinc-500">
-							© {new Date().getFullYear()} Crediflex Protocol. All rights
-							reserved.
-						</p>
-					</div>
-				</div>
-			</motion.footer> */}
 		</div>
 	);
 }

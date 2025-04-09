@@ -1,12 +1,5 @@
 import Link from "next/link";
-import {
-	Clock,
-	ExternalLink,
-	Info,
-	Percent,
-	RefreshCw,
-	Shield,
-} from "lucide-react";
+import { Clock, ExternalLink, Info, RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -247,7 +240,9 @@ export function CreditProfile({
 
 						{/* Right side: Rate value */}
 						<div className="flex items-end">
-							<span className="text-4xl font-bold text-white">{10}%</span>
+							<span className="text-4xl font-bold text-white">
+								{borrowRate}%
+							</span>
 							{/* <Percent className="h-8 w-8 mx-2 text-amber-400" /> */}
 							<span className="mx-2 text-xl text-white">APR</span>
 						</div>

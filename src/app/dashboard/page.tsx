@@ -8,11 +8,16 @@ import { MarketStats } from "./MarketStats";
 // import { Header } from "@/components/header";
 // import { Footer } from "@/components/footer";
 
-export default function Home() {
+export default function Dashboard() {
 	const [creditScore, setCreditScore] = useState(720);
 	const [healthFactor, setHealthFactor] = useState(Infinity);
 	const [lastUpdated, setLastUpdated] = useState("2 hours ago");
 	const [borrowRate, setBorrowRate] = useState(10);
+
+	console.log(setCreditScore);
+	console.log(setHealthFactor);
+	console.log(setLastUpdated);
+	console.log(setBorrowRate);
 
 	return (
 		<div className="flex min-h-screen flex-col bg-black text-white">

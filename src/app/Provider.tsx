@@ -1,12 +1,7 @@
 "use client";
 
 import { wagmiConfig } from "@/lib/rainbowkits";
-import {
-	lightTheme,
-	darkTheme,
-	RainbowKitProvider,
-	Theme,
-} from "@rainbow-me/rainbowkit";
+import { darkTheme, RainbowKitProvider, Theme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
