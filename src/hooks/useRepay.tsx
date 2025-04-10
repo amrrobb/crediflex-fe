@@ -15,7 +15,7 @@ import mainAbi from "@/abi/main.json";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-export const useAddCollateral = () => {
+export const useRepay = () => {
 	const { address: userAddress } = useAccount();
 
 	const [steps, setSteps] = useState<
@@ -40,7 +40,15 @@ export const useAddCollateral = () => {
 	]);
 
 	const mutation = useMutation({
-		mutationFn: async ({ amount }: { amount: string }) => {
+		mutationFn: async ({
+			amount,
+			totalShares,
+			totalAssets,
+		}: {
+			amount: string;
+			totalShares: string;
+			totalAssets: string;
+		}) => {
 			try {
 				const vaultAddress = process.env
 					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress;
@@ -54,11 +62,23 @@ export const useAddCollateral = () => {
 					throw new Error("Invalid parameters");
 				}
 
-				const denormalizeUserAmount = denormalize(amount || "0", 18);
+				const denormalizeUserAmount = denormalize(amount || "0", 6);
 				const userInputBn = BigInt(denormalizeUserAmount);
 
+				const totalSharesBn = BigInt(totalShares);
+				const totalAssetsBn = BigInt(totalAssets);
+
+				if (totalAssetsBn === BigInt(0)) {
+					throw new Error("Total assets cannot be zero");
+				}
+
+				const userSharesBn = (userInputBn * totalSharesBn) / totalAssetsBn;
+				console.log("userSharesBn", userSharesBn);
+				console.log("userInputBn", userInputBn);
+				//  uint256 assets = shares * totalBorrowAssets / totalBorrowShares;
+
 				const assetTokenAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress;
+					.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS as HexAddress;
 				// Step 1: Check allowance
 
 				setSteps((prev) =>
@@ -131,8 +151,8 @@ export const useAddCollateral = () => {
 				const txHash = await writeContract(wagmiConfig, {
 					address: vaultAddress as HexAddress,
 					abi: mainAbi,
-					functionName: "supplyCollateral",
-					args: [userInputBn],
+					functionName: "repay",
+					args: [userSharesBn],
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
 					hash: txHash,

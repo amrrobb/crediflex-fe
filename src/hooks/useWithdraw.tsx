@@ -9,7 +9,7 @@ import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-export const useBorrow = () => {
+export const useWithdrawCollateral = () => {
 	const { address: userAddress } = useAccount();
 
 	const [steps, setSteps] = useState<
@@ -48,13 +48,13 @@ export const useBorrow = () => {
 					throw new Error("Invalid parameters");
 				}
 
-				const denormalizeUserAmount = denormalize(amount || "0", 6);
+				const denormalizeUserAmount = denormalize(amount || "0", 18);
 				const userInputBn = BigInt(denormalizeUserAmount);
 
 				const txHash = await writeContract(wagmiConfig, {
 					address: vaultAddress as HexAddress,
 					abi: mainAbi,
-					functionName: "borrow",
+					functionName: "withdrawCollateral",
 					args: [userInputBn],
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {

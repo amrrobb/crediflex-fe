@@ -1,13 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-	ArrowRight,
-	BarChart3,
-	ChevronRight,
-	Lock,
-	Shield,
-} from "lucide-react";
+import { BarChart3, ChevronRight, Lock, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -38,6 +32,8 @@ export default function Home() {
 									alt="Crediflex"
 									width={200}
 									height={200}
+									loader={({ src }) => src}
+									unoptimized
 								/>
 							</div>
 							<div className="flex items-center justify-center text-center">
@@ -381,16 +377,22 @@ export default function Home() {
 								crypto assets with undercollateralized loans.
 							</p>
 							<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-								<Button className="w-full bg-white text-black hover:bg-zinc-200 sm:w-auto">
-									Launch App
-									<ArrowRight className="ml-2 h-4 w-4" />
+								<Button className="text-xl py-6 px-8 transition-transform transform hover:scale-105">
+									<Link href="/dashboard">
+										<ShinyText
+											text="Launch App"
+											disabled={false}
+											speed={5}
+											className="custom-class"
+										/>
+									</Link>
 								</Button>
-								<Button
+								{/* <Button
 									variant="outline"
 									className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white sm:w-auto"
 								>
 									Read Documentation
-								</Button>
+								</Button> */}
 							</div>
 						</div>
 					</div>
@@ -436,9 +438,8 @@ export default function Home() {
 									</summary>
 									<p className="mt-4 text-zinc-400">
 										The maximum loan-to-value ratio depends on your credit
-										score. Users with excellent scores can borrow up to 300% of
-										their collateral value, while new users typically start at
-										120-150%.
+										score. Users with excellent scores can borrow up to 200% of
+										their collateral value, while new users start at 85%.
 									</p>
 								</details>
 							</div>
@@ -449,10 +450,10 @@ export default function Home() {
 										<ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" />
 									</summary>
 									<p className="mt-4 text-zinc-400">
-										If you&apos;re unable to repay your loan by the due date,
-										your collateral will be liquidated. Additionally, your
-										credit score will be negatively affected, reducing your
-										borrowing capacity for future loans.
+										If you&apos;re unable to repay your loan, your collateral
+										will be liquidated. Additionally, your credit score will be
+										negatively affected, reducing your borrowing capacity for
+										future loans.
 									</p>
 								</details>
 							</div>
@@ -463,24 +464,9 @@ export default function Home() {
 										<ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" />
 									</summary>
 									<p className="mt-4 text-zinc-400">
-										Crediflex currently supports major cryptocurrencies
-										including ETH, WBTC, and several stablecoins as collateral.
-										We&apos;re continuously expanding our supported assets based
-										on community demand and risk assessment.
-									</p>
-								</details>
-							</div>
-							<div className="py-6">
-								<details className="group">
-									<summary className="flex cursor-pointer items-center justify-between text-lg font-medium text-white">
-										<span>Is Crediflex audited?</span>
-										<ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" />
-									</summary>
-									<p className="mt-4 text-zinc-400">
-										Yes, Crediflex has undergone multiple security audits by
-										leading blockchain security firms. All audit reports are
-										publicly available on our documentation site for
-										transparency.
+										Crediflex currently supports WETH for now. We&apos;re
+										continuously expanding our supported assets based on
+										community demand and risk assessment.
 									</p>
 								</details>
 							</div>

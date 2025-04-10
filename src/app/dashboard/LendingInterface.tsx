@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import mainAbi from "@/abi/main.json";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Info } from "lucide-react";
 import Image from "next/image";
+import { useERC20TokenBalance } from "@/hooks/userERC20TokenBalance";
+import { useAccount, useReadContracts } from "wagmi";
+import { HexAddress } from "@/lib/type";
+import { useCalculateDynamicLtv } from "@/hooks/useCalculateDynamicLtv";
+import { normalize, normalizeBN } from "@/lib/bignumber";
+import { useAddCollateral } from "@/hooks/useDeposit";
+import { useBorrow } from "@/hooks/useBorrow";
+import { useGetConversionPrice } from "@/hooks/useGetConversionPrice";
+import { toast } from "@/hooks/use-toast";
+import { LtvSlider } from "./LtvSlider";
+import { useWithdrawCollateral } from "@/hooks/useWithdraw";
+import { useRepay } from "@/hooks/useRepay";
+
+type PositionData = {
+	result: [string, string, string];
+};
 
 // Constants for token images
 const TOKEN_IMAGES: { [key: string]: string } = {
@@ -26,30 +42,134 @@ export function LendingInterface() {
 	const [borrowToken, setBorrowToken] = useState("USDC");
 	const [collateralAmount, setCollateralAmount] = useState("0");
 	const [borrowAmount, setBorrowAmount] = useState("0");
-	const [ltvRatio, setLtvRatio] = useState(0);
 
-	const handleLtvChange = (value: number[]) => {
-		setLtvRatio(value[0]);
-	};
+	const { address } = useAccount();
+	const balanceCollateral = useERC20TokenBalance(
+		address,
+		process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress
+	);
+	const { data: ltv } = useCalculateDynamicLtv({
+		userAddress: address,
+	}) as { data: string };
+	const liquidationThreshold = parseFloat(normalize(ltv || "0", 18)) * 100;
 
-	const getRiskLevel = (ltv: number) => {
-		if (ltv < 25) return "Conservative";
-		if (ltv < 50) return "Moderate";
-		if (ltv < 75) return "Aggressive";
-		return "Liquidation Risk";
-	};
+	const { data: positionData, refetch: refetchPositions } = useReadContracts({
+		contracts: [
+			{
+				abi: mainAbi,
+				address: process.env
+					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				functionName: "positions",
+				args: [address],
+			},
+			{
+				abi: mainAbi,
+				address: process.env
+					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				functionName: "totalBorrowAssets",
+			},
+			{
+				abi: mainAbi,
+				address: process.env
+					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				functionName: "totalBorrowShares",
+			},
+			{
+				abi: mainAbi,
+				address: process.env
+					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				functionName: "totalSupplyAssets",
+			},
+			{
+				abi: mainAbi,
+				address: process.env
+					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				functionName: "totalSupplyShares",
+			},
+		],
+		query: {
+			enabled: !!address,
+		},
+	});
+	const { mutation: depositCollateral } = useAddCollateral();
+	const { mutation: withdrawCollateral } = useWithdrawCollateral();
+	const { mutation: borrow } = useBorrow();
+	const { mutation: repay } = useRepay();
+	const { data: conversionPrice } = useGetConversionPrice({
+		amountIn: (positionData?.[0] as PositionData)?.result?.[2] ?? "0",
+		dataFeedIn: process.env
+			.NEXT_PUBLIC_EDUCHAIN_WETH_USD_DATAFEED_ADDRESS as HexAddress,
+		dataFeedOut: process.env
+			.NEXT_PUBLIC_EDUCHAIN_USDC_USD_DATAFEED_ADDRESS as HexAddress,
+		tokenIn: process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress,
+		tokenOut: process.env.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS as HexAddress,
+	});
 
-	const sliderGradient = useMemo(() => {
-		if (ltvRatio < 25) {
-			return "bg-gradient-to-r from-emerald-700 to-emerald-500";
-		} else if (ltvRatio < 50) {
-			return "bg-gradient-to-r from-blue-700 to-blue-400";
-		} else if (ltvRatio < 75) {
-			return "bg-gradient-to-r from-amber-700 to-amber-400";
-		} else {
-			return "bg-gradient-to-r from-red-700 to-red-400";
+	const userBorrowAssets = normalizeBN(
+		((positionData?.[0] as PositionData)?.result?.[1] ?? "0") as string,
+		18
+	)
+		.multipliedBy(normalizeBN((positionData?.[1].result as string) ?? "0", 6))
+		.div(normalizeBN((positionData?.[2].result as string) ?? "0", 18));
+	const availableToBorrow = normalizeBN((conversionPrice as string) ?? "0", 6)
+		.multipliedBy(normalizeBN((ltv as string) ?? "0", 18))
+		.minus(userBorrowAssets.isNaN() ? 0 : userBorrowAssets);
+	const collateral = normalize(
+		((positionData?.[0] as PositionData)?.result?.[2] ?? "0") as string,
+		18
+	);
+	const totalBorrowAssets = positionData?.[1].result as string;
+	const totalBorrowShares = positionData?.[2].result as string;
+
+	console.log("totalBorrowAssets", totalBorrowAssets);
+	console.log("totalBorrowShares", totalBorrowShares);
+
+	const initialLtvRatio = useMemo(() => {
+		if (userBorrowAssets.isNaN()) return 0;
+
+		const totalCollateralValue = normalizeBN(
+			(conversionPrice as string) ?? "0",
+			6
+		);
+		console.log("totalCollateralValue", totalCollateralValue);
+
+		if (totalCollateralValue.isZero()) return 0;
+
+		const result = userBorrowAssets
+			.div(totalCollateralValue)
+			.multipliedBy(100)
+			.toNumber();
+
+		console.log("result", result);
+
+		return result;
+	}, [userBorrowAssets, conversionPrice]);
+	const [ltvRatio, setLtvRatio] = useState(initialLtvRatio);
+
+	useEffect(() => {
+		setLtvRatio(initialLtvRatio);
+	}, [initialLtvRatio]);
+
+	const handleLtvChange = (value: number) => {
+		setLtvRatio(value);
+		const maxBorrowAmount = availableToBorrow;
+		let newBorrowAmount = normalizeBN((conversionPrice as string) ?? "0", 6)
+			.multipliedBy(value)
+			.div(100)
+			.minus(userBorrowAssets.isNaN() ? 0 : userBorrowAssets);
+
+		// If newBorrowAmount is less than 0, set it to 0
+		if (newBorrowAmount.isLessThan(0)) {
+			newBorrowAmount = normalizeBN("0", 6);
 		}
-	}, [ltvRatio]);
+
+		// Ensure the new borrow amount does not exceed the available to borrow amount
+		const finalBorrowAmount = newBorrowAmount.isGreaterThan(maxBorrowAmount)
+			? maxBorrowAmount
+			: newBorrowAmount;
+
+		setBorrowAmount(finalBorrowAmount.toString());
+	};
 
 	return (
 		<div className="space-y-6">
@@ -108,18 +228,84 @@ export function LendingInterface() {
 
 							<div className="space-y-1">
 								<div className="flex justify-between text-sm">
-									<span className="text-zinc-400">Balance:</span>
-									<span className="text-zinc-300">0 WETH</span>
+									<span className="text-zinc-400">Wallet Balance:</span>
+									<span className="text-zinc-300">
+										{balanceCollateral.formattedBalance} WETH
+									</span>
 								</div>
 								<div className="flex justify-between text-sm">
 									<span className="text-zinc-400">Deposited:</span>
-									<span className="text-zinc-300">0.00 WETH</span>
+									<span className="text-zinc-300">
+										{parseFloat(collateral) === 0
+											? "0"
+											: parseFloat(collateral).toFixed(2)}{" "}
+										WETH
+									</span>
 								</div>
 							</div>
 
-							<Button className="w-full border-emerald-800 bg-emerald-950/30 text-emerald-500 hover:bg-emerald-900/50 hover:text-emerald-400">
-								Deposit Collateral
-							</Button>
+							<div className="grid grid-cols-2 gap-2">
+								<Button
+									disabled={depositCollateral.isPending}
+									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+									onClick={() => {
+										depositCollateral.mutate(
+											{
+												amount: collateralAmount,
+											},
+											{
+												onSuccess() {
+													toast({
+														title: "Deposited successfully",
+														description: "You have successfully deposited",
+													});
+													refetchPositions();
+												},
+												onError(error) {
+													toast({
+														title: "Error",
+														description: error.message,
+													});
+												},
+											}
+										);
+										// setCollateralAmount("0");
+									}}
+								>
+									{depositCollateral.isPending ? "Depositing..." : "Deposit"}
+								</Button>
+								<Button
+									disabled={
+										withdrawCollateral.isPending || parseFloat(collateral) <= 0
+									}
+									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+									onClick={() => {
+										withdrawCollateral.mutate(
+											{
+												amount: collateralAmount,
+											},
+											{
+												onSuccess() {
+													toast({
+														title: "Withdrawn successfully",
+														description: "You have successfully withdrawn",
+													});
+													refetchPositions();
+												},
+												onError(error) {
+													toast({
+														title: "Error",
+														description: error.message,
+													});
+												},
+											}
+										);
+										// setCollateralAmount("0");
+									}}
+								>
+									{withdrawCollateral.isPending ? "Withdrawing..." : "Withdraw"}
+								</Button>
+							</div>
 						</div>
 					</CardContent>
 				</Card>
@@ -176,114 +362,121 @@ export function LendingInterface() {
 							<div className="space-y-1">
 								<div className="flex justify-between text-sm">
 									<span className="text-zinc-400">Available to borrow:</span>
-									<span className="text-zinc-300">0 USDC</span>
+									<span className="text-zinc-300">
+										{availableToBorrow.isNaN() || availableToBorrow.isZero()
+											? "0"
+											: availableToBorrow.toFixed(2)}{" "}
+										USDC
+									</span>
 								</div>
 								<div className="flex justify-between text-sm">
-									<span className="text-zinc-400">Your borrowed value:</span>
-									<span className="text-zinc-300">0 USDC</span>
+									<span className="text-zinc-400">Borrowed:</span>
+									<span className="text-zinc-300">
+										{userBorrowAssets.isNaN() || userBorrowAssets.isZero()
+											? "0"
+											: userBorrowAssets.toFixed(2)}{" "}
+										USDC
+									</span>
 								</div>
 							</div>
-
-							<Button className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 hover:text-white">
-								Borrow
-							</Button>
+							<div className="grid grid-cols-2 gap-2">
+								<Button
+									disabled={borrow.isPending || parseFloat(collateral) <= 0}
+									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+									onClick={() => {
+										borrow.mutate(
+											{
+												amount: borrowAmount,
+											},
+											{
+												onSuccess() {
+													toast({
+														title: "Borrowed successfully",
+														description: "You have successfully borrowed",
+													});
+													refetchPositions();
+												},
+												onError(error) {
+													toast({
+														title: "Error",
+														description: error.message,
+													});
+												},
+											}
+										);
+										// setBorrowAmount("0");
+									}}
+								>
+									{borrow.isPending ? "Borrowing..." : "Borrow"}
+								</Button>
+								<Button
+									disabled={
+										repay.isPending ||
+										parseFloat(userBorrowAssets.toFixed(2)) <= 0
+									}
+									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+									onClick={() => {
+										repay.mutate(
+											{
+												amount: borrowAmount,
+												totalAssets: totalBorrowAssets,
+												totalShares: totalBorrowShares,
+											},
+											{
+												onSuccess() {
+													toast({
+														title: "Repaid successfully",
+														description: "You have successfully repaid",
+													});
+													refetchPositions();
+												},
+												onError(error) {
+													toast({
+														title: "Error",
+														description: error.message,
+													});
+												},
+											}
+										);
+										// setBorrowAmount("0");
+									}}
+								>
+									{repay.isPending ? "Repaying..." : "Repay"}
+								</Button>
+							</div>
 						</div>
 					</CardContent>
 				</Card>
 			</div>
 
 			{/* LTV Slider Card */}
-			<Card className="bg-zinc-900 border-zinc-800">
-				<CardContent className="p-6">
-					<div className="space-y-6">
-						<div className="flex items-center justify-between">
-							<div>
-								<h3 className="text-xl font-bold text-white">
-									Loan to Value (LTV)
-								</h3>
-								<p className="text-sm text-zinc-400">
-									Ratio of the borrowed value to the collateral value
-								</p>
-							</div>
-							<div className="text-2xl font-bold text-white">
-								{ltvRatio.toFixed(2)}%
-							</div>
-						</div>
-
-						<div className="pt-4">
-							<Slider
-								defaultValue={[0]}
-								max={150}
-								step={1}
-								value={[ltvRatio]}
-								onValueChange={handleLtvChange}
-								className="py-4"
-								rangeClassName={sliderGradient}
-							/>
-							<div className="mt-2 flex justify-between text-sm text-zinc-400">
-								<span>Conservative</span>
-								<span>Moderate</span>
-								<span>Aggressive</span>
-								<span>Liquidation</span>
-							</div>
-						</div>
-
-						<div className="rounded-lg bg-zinc-800 p-4">
-							<div className="flex items-start gap-3">
-								<div
-									className={`rounded-full p-1 ${
-										getRiskLevel(ltvRatio) === "Conservative"
-											? "bg-emerald-950/30 text-emerald-500"
-											: getRiskLevel(ltvRatio) === "Moderate"
-											? "bg-blue-950/30 text-blue-400"
-											: getRiskLevel(ltvRatio) === "Aggressive"
-											? "bg-amber-950/30 text-amber-400"
-											: "bg-red-950/30 text-red-400"
-									}`}
-								>
-									<Info className="h-4 w-4" />
-								</div>
-								<div>
-									<p className="font-medium text-white">
-										{getRiskLevel(ltvRatio)} position
-									</p>
-									<p className="text-sm text-zinc-400">
-										{getRiskLevel(ltvRatio) === "Conservative"
-											? "Low risk, safe from liquidation even during high market volatility."
-											: getRiskLevel(ltvRatio) === "Moderate"
-											? "Balanced risk, generally safe but could be liquidated during significant market downturns."
-											: getRiskLevel(ltvRatio) === "Aggressive"
-											? "Higher risk, vulnerable to liquidation during market volatility."
-											: "Very high risk, likely to be liquidated even with minor market movements."}
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<LtvSlider
+				value={ltvRatio}
+				liquidationThreshold={liquidationThreshold}
+				onChange={handleLtvChange}
+			/>
 
 			{/* Credit Boost Explainer */}
-			<Card className="bg-gradient-to-r from-zinc-900 to-zinc-800 border-zinc-700">
+			{/* <Card className="bg-gradient-to-r from-zinc-900 to-zinc-800 border-zinc-700">
 				<CardContent className="p-6">
 					<div className="flex flex-col gap-4 md:flex-row md:items-center">
 						<div className="flex-1">
 							<h3 className="text-lg font-bold text-white">
-								Undercollateralized Borrowing with Credit Boost
+								Enhanced Borrowing Power with Credit Boost
 							</h3>
 							<p className="mt-1 text-zinc-400">
-								Your excellent credit score unlocks a 2.8x collateral
-								multiplier, allowing you to borrow up to 280% of your collateral
-								value. This is significantly higher than the standard 75%
-								offered by traditional DeFi protocols.
+								Leverage your outstanding credit score to access a 2.8x
+								collateral multiplier, enabling borrowing up to 280% of your
+								collateral's value. This surpasses the typical 75% limit found
+								in conventional DeFi platforms.
 							</p>
 						</div>
 						<Button className="shrink-0 bg-white text-black hover:bg-zinc-200">
-							Learn More
+							Discover More
 						</Button>
 					</div>
 				</CardContent>
-			</Card>
+			</Card> */}
 		</div>
 	);
 }

@@ -3,7 +3,6 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import Image from "next/image";
-import { Toaster } from "@/components/ui/toaster";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
@@ -93,7 +92,6 @@ export default function Header() {
 					<ConnectButton />
 				</div>
 			</div>
-			<Toaster />
 		</header>
 	);
 }

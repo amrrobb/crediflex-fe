@@ -38,8 +38,8 @@ export default function RootLayout({
 			>
 				<Provider>
 					<div className="flex-col bg-black text-white">
-						<Header />
 						<Toaster />
+						<Header />
 						{children}
 						<Footer />
 					</div>

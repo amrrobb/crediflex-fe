@@ -1,22 +1,28 @@
 import { useReadContract } from "wagmi";
 import mainAbi from "@/abi/main.json";
+import { HexAddress } from "@/lib/type";
 
 export const useGetConversionPrice = ({
-  amountIn,
-  dataFeedIn,
-  dataFeedOut,
+	amountIn,
+	dataFeedIn,
+	dataFeedOut,
+	tokenIn,
+	tokenOut,
 }: {
-  amountIn: string;
-  dataFeedIn: string;
-  dataFeedOut: string;
+	amountIn: string;
+	dataFeedIn: string;
+	dataFeedOut: string;
+	tokenIn: string;
+	tokenOut: string;
 }) => {
-  return useReadContract({
-    abi: mainAbi,
-    address: "0x4C086Bb080792308C74e5B804907e7D35779a56A",
-    functionName: "getConversionPrice",
-    args: [amountIn, dataFeedIn, dataFeedOut],
-    query: {
-      enabled: !!amountIn && !!dataFeedIn && !!dataFeedOut,
-    },
-  });
+	return useReadContract({
+		abi: mainAbi,
+		address: process.env.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+		functionName: "getConversionPrice",
+		args: [amountIn, dataFeedIn, dataFeedOut, tokenIn, tokenOut],
+		query: {
+			enabled:
+				!!amountIn && !!dataFeedIn && !!dataFeedOut && !!tokenIn && !!tokenOut,
+		},
+	});
 };

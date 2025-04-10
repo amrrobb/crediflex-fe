@@ -15,7 +15,7 @@ import mainAbi from "@/abi/main.json";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-export const useAddCollateral = () => {
+export const useSupply = () => {
 	const { address: userAddress } = useAccount();
 
 	const [steps, setSteps] = useState<
@@ -54,12 +54,13 @@ export const useAddCollateral = () => {
 					throw new Error("Invalid parameters");
 				}
 
-				const denormalizeUserAmount = denormalize(amount || "0", 18);
+				const denormalizeUserAmount = denormalize(amount || "0", 6);
 				const userInputBn = BigInt(denormalizeUserAmount);
-
 				const assetTokenAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress;
+					.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS as HexAddress;
 				// Step 1: Check allowance
+
+				console.log("userInputBn", userInputBn);
 
 				setSteps((prev) =>
 					prev.map((item) => {
@@ -131,7 +132,7 @@ export const useAddCollateral = () => {
 				const txHash = await writeContract(wagmiConfig, {
 					address: vaultAddress as HexAddress,
 					abi: mainAbi,
-					functionName: "supplyCollateral",
+					functionName: "supply",
 					args: [userInputBn],
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
