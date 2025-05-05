@@ -30,6 +30,11 @@ import {
 	Info,
 } from "lucide-react";
 import { useSupply } from "@/hooks/useSupply";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
+import { useChainId } from "wagmi";
 
 export function SupplyInterface() {
 	const [amount, setAmount] = useState("100");
@@ -38,6 +43,7 @@ export function SupplyInterface() {
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [isError, setIsError] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
+	const chainId = useChainId();
 
 	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value.replace(/[^0-9.]/g, "");

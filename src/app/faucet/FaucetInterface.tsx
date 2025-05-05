@@ -26,6 +26,11 @@ import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useMintToken } from "@/hooks/useMintToken";
 import { HexAddress } from "@/lib/type";
 import { Switch } from "@/components/ui/switch";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
+import { useChainId } from "wagmi";
 
 export function FaucetInterface() {
 	const [token, setToken] = useState("WETH");
@@ -35,6 +40,7 @@ export function FaucetInterface() {
 	const [customReceiverEnabled, setCustomReceiverEnabled] = useState(false);
 
 	const { mint, isPending, isSuccess, isError, error } = useMintToken();
+	const chainId = useChainId();
 
 	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		// Only allow numbers and decimal points

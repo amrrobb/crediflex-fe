@@ -28,10 +28,7 @@ function debugError(...args: any[]) {
 	}
 }
 
-export async function POST(
-	request: NextRequest,
-	{ params }: { params: { chain: string } }
-) {
+export async function POST(request: NextRequest, { params }: any) {
 	const requestStartTime = Date.now();
 	const requestId = Math.random().toString(36).substring(7);
 
