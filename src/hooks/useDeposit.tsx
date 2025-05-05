@@ -10,13 +10,18 @@ import {
 } from "wagmi/actions";
 import { useState } from "react";
 import { encodeFunctionData, erc20Abi } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import mainAbi from "@/abi/main.json";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 export const useAddCollateral = () => {
 	const { address: userAddress } = useAccount();
+	const chainId = useChainId();
 
 	const [steps, setSteps] = useState<
 		Array<{
@@ -42,8 +47,10 @@ export const useAddCollateral = () => {
 	const mutation = useMutation({
 		mutationFn: async ({ amount }: { amount: string }) => {
 			try {
-				const vaultAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress;
+				const vaultAddress = getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress;
 				// Reset steps
 				setSteps([
 					{ step: 1, status: "idle" },
@@ -57,8 +64,10 @@ export const useAddCollateral = () => {
 				const denormalizeUserAmount = denormalize(amount || "0", 18);
 				const userInputBn = BigInt(denormalizeUserAmount);
 
-				const assetTokenAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress;
+				const assetTokenAddress = getContractAddress(
+					chainId,
+					ContractName.weth
+				) as HexAddress;
 				// Step 1: Check allowance
 
 				setSteps((prev) =>

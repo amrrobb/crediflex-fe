@@ -10,13 +10,18 @@ import {
 } from "wagmi/actions";
 import { useState } from "react";
 import { encodeFunctionData, erc20Abi } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import mainAbi from "@/abi/main.json";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 export const useRepay = () => {
 	const { address: userAddress } = useAccount();
+	const chainId = useChainId();
 
 	const [steps, setSteps] = useState<
 		Array<{
@@ -50,8 +55,10 @@ export const useRepay = () => {
 			totalAssets: string;
 		}) => {
 			try {
-				const vaultAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress;
+				const vaultAddress = getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress;
 				// Reset steps
 				setSteps([
 					{ step: 1, status: "idle" },
@@ -77,8 +84,10 @@ export const useRepay = () => {
 				console.log("userInputBn", userInputBn);
 				//  uint256 assets = shares * totalBorrowAssets / totalBorrowShares;
 
-				const assetTokenAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS as HexAddress;
+				const assetTokenAddress = getContractAddress(
+					chainId,
+					ContractName.usdc
+				) as HexAddress;
 				// Step 1: Check allowance
 
 				setSteps((prev) =>
@@ -153,6 +162,7 @@ export const useRepay = () => {
 					abi: mainAbi,
 					functionName: "repay",
 					args: [userSharesBn],
+					...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
 					hash: txHash,

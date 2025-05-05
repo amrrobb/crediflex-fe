@@ -1,16 +1,21 @@
 import mainAbi from "@/abi/main.json";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
 import { denormalize } from "@/lib/bignumber";
 import { wagmiConfig } from "@/lib/rainbowkits";
 import { HexAddress } from "@/lib/type";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 export const useWithdrawCollateral = () => {
 	const { address: userAddress } = useAccount();
+	const chainId = useChainId();
 
 	const [steps, setSteps] = useState<
 		Array<{
@@ -36,8 +41,10 @@ export const useWithdrawCollateral = () => {
 	const mutation = useMutation({
 		mutationFn: async ({ amount }: { amount: string }) => {
 			try {
-				const vaultAddress = process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress;
+				const vaultAddress = getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress;
 				// Reset steps
 				setSteps([
 					{ step: 1, status: "idle" },
@@ -56,6 +63,7 @@ export const useWithdrawCollateral = () => {
 					abi: mainAbi,
 					functionName: "withdrawCollateral",
 					args: [userInputBn],
+					...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
 					hash: txHash,

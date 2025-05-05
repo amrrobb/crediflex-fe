@@ -198,7 +198,7 @@ export function SupplyInterface() {
 								<div className="flex justify-between py-2 border-b border-zinc-800">
 									<span className="text-zinc-400">USDC Contract</span>
 									<span className="text-zinc-300 font-mono text-sm">
-										{process.env.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS}
+										{getContractAddress(chainId, ContractName.usdc)}
 									</span>
 								</div>
 							</div>

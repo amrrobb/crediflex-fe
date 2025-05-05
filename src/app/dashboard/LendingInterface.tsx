@@ -15,7 +15,7 @@ import {
 import { Info } from "lucide-react";
 import Image from "next/image";
 import { useERC20TokenBalance } from "@/hooks/userERC20TokenBalance";
-import { useAccount, useReadContracts } from "wagmi";
+import { useAccount, useChainId, useReadContracts } from "wagmi";
 import { HexAddress } from "@/lib/type";
 import { useCalculateDynamicLtv } from "@/hooks/useCalculateDynamicLtv";
 import { normalize, normalizeBN } from "@/lib/bignumber";
@@ -26,6 +26,10 @@ import { toast } from "@/hooks/use-toast";
 import { LtvSlider } from "./LtvSlider";
 import { useWithdrawCollateral } from "@/hooks/useWithdraw";
 import { useRepay } from "@/hooks/useRepay";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
 
 type PositionData = {
 	result: [string, string, string];
@@ -42,11 +46,12 @@ export function LendingInterface() {
 	const [borrowToken, setBorrowToken] = useState("USDC");
 	const [collateralAmount, setCollateralAmount] = useState("0");
 	const [borrowAmount, setBorrowAmount] = useState("0");
+	const chainId = useChainId();
 
 	const { address } = useAccount();
 	const balanceCollateral = useERC20TokenBalance(
 		address,
-		process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress
+		getContractAddress(chainId, ContractName.weth) as HexAddress
 	);
 	const { data: ltv } = useCalculateDynamicLtv({
 		userAddress: address,
@@ -57,33 +62,43 @@ export function LendingInterface() {
 		contracts: [
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "positions",
 				args: [address],
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalBorrowAssets",
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalBorrowShares",
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalSupplyAssets",
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalSupplyShares",
 			},
 		],
@@ -97,12 +112,16 @@ export function LendingInterface() {
 	const { mutation: repay } = useRepay();
 	const { data: conversionPrice } = useGetConversionPrice({
 		amountIn: (positionData?.[0] as PositionData)?.result?.[2] ?? "0",
-		dataFeedIn: process.env
-			.NEXT_PUBLIC_EDUCHAIN_WETH_USD_DATAFEED_ADDRESS as HexAddress,
-		dataFeedOut: process.env
-			.NEXT_PUBLIC_EDUCHAIN_USDC_USD_DATAFEED_ADDRESS as HexAddress,
-		tokenIn: process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress,
-		tokenOut: process.env.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS as HexAddress,
+		dataFeedIn: getContractAddress(
+			chainId,
+			ContractName.wethUsdDatafeed
+		) as HexAddress,
+		dataFeedOut: getContractAddress(
+			chainId,
+			ContractName.usdcUsdDatafeed
+		) as HexAddress,
+		tokenIn: getContractAddress(chainId, ContractName.weth) as HexAddress,
+		tokenOut: getContractAddress(chainId, ContractName.usdc) as HexAddress,
 	});
 
 	const userBorrowAssets = normalizeBN(

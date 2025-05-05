@@ -88,8 +88,8 @@ export function FaucetInterface() {
 
 		const tokenAddress: HexAddress = (
 			token === "WETH"
-				? process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS
-				: process.env.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS
+				? getContractAddress(chainId, ContractName.weth)
+				: getContractAddress(chainId, ContractName.usdc)
 		) as HexAddress;
 
 		const value = Number.parseFloat(amount) * Number(getMultiplierValue());
@@ -262,13 +262,13 @@ export function FaucetInterface() {
 								<div className="flex justify-between py-2 border-b border-zinc-800">
 									<span className="text-zinc-400">WETH Contract</span>
 									<span className="text-zinc-300 font-mono text-sm">
-										{process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS}
+										{getContractAddress(chainId, ContractName.weth)}
 									</span>
 								</div>
 								<div className="flex justify-between py-2 border-b border-zinc-800">
 									<span className="text-zinc-400">USDC Contract</span>
 									<span className="text-zinc-300 font-mono text-sm">
-										{process.env.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS}
+										{getContractAddress(chainId, ContractName.usdc)}
 									</span>
 								</div>
 							</div>

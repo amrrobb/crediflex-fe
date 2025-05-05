@@ -17,13 +17,22 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useMemo, useState } from "react";
 import { useGetCurrentUserCscore } from "@/hooks/useGetCscore";
-import { useAccount, useReadContracts, useWriteContract } from "wagmi";
+import {
+	useAccount,
+	useChainId,
+	useReadContracts,
+	useWriteContract,
+} from "wagmi";
 import { HexAddress } from "@/lib/type";
 import { normalize, normalizeBN } from "@/lib/bignumber";
 import { timeAgo } from "@/helpers/timeAgo";
 import { useCalculateDynamicLtv } from "@/hooks/useCalculateDynamicLtv";
 import { useCalculateHealthFactor } from "@/hooks/useCalculateHealthFactor";
 import { useGetConversionPrice } from "@/hooks/useGetConversionPrice";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
 
 type PositionData = {
 	result: [string, string, string];
@@ -32,6 +41,7 @@ type PositionData = {
 export function CreditProfile() {
 	const [loading, setLoading] = useState(false);
 	const [, setError] = useState<string | null>(null);
+	const chainId = useChainId();
 
 	const { writeContract } = useWriteContract({});
 	const { address } = useAccount();
@@ -53,33 +63,43 @@ export function CreditProfile() {
 		contracts: [
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "positions",
 				args: [address],
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalBorrowAssets",
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalBorrowShares",
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalSupplyAssets",
 			},
 			{
 				abi: mainAbi,
-				address: process.env
-					.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+				address: getContractAddress(
+					chainId,
+					ContractName.crediflex
+				) as HexAddress,
 				functionName: "totalSupplyShares",
 			},
 		],
@@ -89,12 +109,16 @@ export function CreditProfile() {
 	});
 	const { data: conversionPrice } = useGetConversionPrice({
 		amountIn: (positionData?.[0] as PositionData)?.result?.[2] ?? "0",
-		dataFeedIn: process.env
-			.NEXT_PUBLIC_EDUCHAIN_WETH_USD_DATAFEED_ADDRESS as HexAddress,
-		dataFeedOut: process.env
-			.NEXT_PUBLIC_EDUCHAIN_USDC_USD_DATAFEED_ADDRESS as HexAddress,
-		tokenIn: process.env.NEXT_PUBLIC_EDUCHAIN_WETH_ADDRESS as HexAddress,
-		tokenOut: process.env.NEXT_PUBLIC_EDUCHAIN_USDC_ADDRESS as HexAddress,
+		dataFeedIn: getContractAddress(
+			chainId,
+			ContractName.wethUsdDatafeed
+		) as HexAddress,
+		dataFeedOut: getContractAddress(
+			chainId,
+			ContractName.usdcUsdDatafeed
+		) as HexAddress,
+		tokenIn: getContractAddress(chainId, ContractName.weth) as HexAddress,
+		tokenOut: getContractAddress(chainId, ContractName.usdc) as HexAddress,
 	});
 
 	const userSupplyAssets = normalizeBN((conversionPrice as string) ?? "0", 6);
@@ -124,10 +148,11 @@ export function CreditProfile() {
 
 		writeContract(
 			{
-				address: process.env.NEXT_PUBLIC_EDUCHAIN_AVS_ADDRESS as HexAddress,
+				address: getContractAddress(chainId, ContractName.avs) as HexAddress,
 				abi: avsAbi,
 				functionName: "createNewTask",
 				args: [address],
+				...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 			},
 			{
 				onSuccess: () => {

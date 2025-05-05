@@ -1,15 +1,20 @@
 import mainAbi from "@/abi/main.json";
+import {
+	ContractName,
+	getContractAddress,
+} from "@/constants/contract/contract-address";
 import { HexAddress } from "@/lib/type";
-import { useReadContract } from "wagmi";
+import { useChainId, useReadContract } from "wagmi";
 
 export const useCalculateHealthFactor = ({
 	userAddress,
 }: {
 	userAddress?: HexAddress;
 }) => {
+	const chainId = useChainId();
 	return useReadContract({
 		abi: mainAbi,
-		address: process.env.NEXT_PUBLIC_EDUCHAIN_CREDIFLEX_ADDRESS as HexAddress,
+		address: getContractAddress(chainId, ContractName.crediflex) as HexAddress,
 		functionName: "calculateHealth",
 		args: [userAddress],
 		query: {

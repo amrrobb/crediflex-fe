@@ -4,7 +4,7 @@ import { wagmiConfig } from "@/lib/rainbowkits";
 import { useState } from "react";
 import { erc20Abi } from "viem";
 import { HexAddress } from "@/lib/type";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useChainId, useWalletClient } from "wagmi";
 import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
 
 interface MintParams {
@@ -20,6 +20,7 @@ export function useMintToken() {
 	const [error, setError] = useState<Error | null>(null);
 
 	const { address } = useAccount();
+	const chainId = useChainId();
 	const { data: walletClient } = useWalletClient();
 
 	const reset = () => {
@@ -51,6 +52,7 @@ export function useMintToken() {
 				abi: faucetAbi,
 				functionName: "mint",
 				args: [receiverAddres, amount],
+				...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 			});
 
 			const result = await waitForTransactionReceipt(wagmiConfig, {

@@ -9,8 +9,8 @@ const openCampusTestnet = {
 		"https://s3.coinmarketcap.com/static-gravity/image/60f1fc5d85f2463881db170b6d740876.png",
 	iconBackground: "#fff",
 	nativeCurrency: {
-		name: "EDU",
-		symbol: "EDU",
+		name: "Ether",
+		symbol: "ETH",
 		decimals: 18,
 	},
 	rpcUrls: {
@@ -24,15 +24,38 @@ const openCampusTestnet = {
 	},
 } as const satisfies Chain;
 
+const pharosDevnet = {
+	id: 50002,
+	name: "Pharos Devnet",
+	iconUrl: "./pharos.png",
+	nativeCurrency: {
+		decimals: 18,
+		name: "Ether",
+		symbol: "ETH",
+	},
+	rpcUrls: {
+		default: {
+			http: ["/api/rpc/pharos"],
+			// http: ["https://devnet.dplabs-internal.com"],
+		},
+	},
+	blockExplorers: {
+		default: {
+			name: "Explorer",
+			url: "https://pharosscan.xyz/",
+		},
+	},
+} as const satisfies Chain;
+
 export const wagmiConfig = createConfig({
 	chains: [
+		pharosDevnet,
 		openCampusTestnet,
 		//  arbitrumSepolia
 	],
 	transports: {
-		[openCampusTestnet.id]: http(
-			"https://rpc.open-campus-codex.gelato.digital"
-		),
+		[pharosDevnet.id]: http(pharosDevnet.rpcUrls.default.http[0]),
+		[openCampusTestnet.id]: http(openCampusTestnet.rpcUrls.default.http[0]),
 		// [arbitrumSepolia.id]: http(
 		// 	"https://arbitrum-sepolia.blockpi.network/v1/rpc/public"
 		// ),
