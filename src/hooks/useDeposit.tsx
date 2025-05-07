@@ -142,6 +142,7 @@ export const useAddCollateral = () => {
 					abi: mainAbi,
 					functionName: "supplyCollateral",
 					args: [userInputBn],
+					...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
 					hash: txHash,

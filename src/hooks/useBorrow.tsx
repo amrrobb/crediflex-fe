@@ -63,6 +63,7 @@ export const useBorrow = () => {
 					abi: mainAbi,
 					functionName: "borrow",
 					args: [userInputBn],
+					...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
 					hash: txHash,

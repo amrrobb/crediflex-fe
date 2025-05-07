@@ -96,6 +96,7 @@ export const useSupply = () => {
 							abi: erc20Abi,
 							functionName: "approve",
 							args: [vaultAddress as HexAddress, userInputBn],
+							...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 						});
 
 						// Send tx
@@ -143,6 +144,7 @@ export const useSupply = () => {
 					abi: mainAbi,
 					functionName: "supply",
 					args: [userInputBn],
+					...(chainId === 50002 ? { gas: BigInt(300_000) } : {}),
 				});
 				const result = await waitForTransactionReceipt(wagmiConfig, {
 					hash: txHash,

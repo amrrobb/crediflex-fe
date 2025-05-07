@@ -278,10 +278,6 @@ export function FaucetInterface() {
 									</span>
 								</div>
 							</div>
-							<div className="flex justify-between py-2 border-b border-zinc-800">
-								<span className="text-zinc-400">Network</span>
-								<span className="text-zinc-300">Open Campus Testnet</span>
-							</div>
 						</div>
 					</div>
 
